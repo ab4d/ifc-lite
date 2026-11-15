@@ -2,6 +2,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+// AB4D fork: the additions at the bottom of this file declare the geometry_interop
+// module and re-export its native mesh streaming API for .NET interop.
+// See geometry_interop.rs for the implementation (Andrej Benedik / AB4D).
+
 //! C FFI bindings for ifc-lite.
 //!
 //! Exports functions for use via P/Invoke from C#:
@@ -273,3 +277,10 @@ pub unsafe extern "C" fn ifc_lite_free(ptr: *mut u8, len: usize) {
         let _ = Box::from_raw(std::ptr::slice_from_raw_parts_mut(ptr, len));
     }
 }
+
+mod geometry_interop;
+pub use geometry_interop::{
+    geometry_processor_free, geometry_processor_new, geometry_processor_process_adaptive,
+    FfiTessellationQuality, GeometryProcessor, MeshBatchCallback, MeshBatchEvent,
+    ModelMetadataCallback, NativeMesh, ProcessAdaptiveOptions,
+};
