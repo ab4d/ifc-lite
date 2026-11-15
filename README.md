@@ -50,6 +50,7 @@ for native consumers; geometry generation continues to use the Rust engine.
 
 ## Build the native DLL
 
+### Build on Windows
 On Windows, install Rust and the Visual Studio C++ build tools, including the
 Windows SDK. From the repository root, build the x64 DLL with:
 
@@ -74,6 +75,32 @@ The ordinary `--release` build uses aborting panics and is refused by this crate
 The DLL architecture must match the .NET process. For x86, install the
 `i686-pc-windows-msvc` Rust target and the corresponding Visual Studio tools,
 then build with `--target i686-pc-windows-msvc` into its separate target directory.
+
+### Build on macOS
+
+Install Rust and use the following command:
+```bash
+cargo +nightly build --profile server-release -p ifc-lite-ffi --target aarch64-apple-darwin
+```
+
+Output:
+```text
+target/aarch64-apple-darwin/server-release/libifc_lite_ffi.dylib
+```
+
+You also need to sign the library. If you do not have the Apple Developer Id, you can use the ad-hoc certificate:
+```
+codesign --force --deep --sign - libifc_lite_ffi.dylib
+```
+
+If you used ad-hoc certificate, then you also need make the library trusted with the following:
+```
+xattr -d com.apple.quarantine libifc_lite_ffi.dylib
+```
+
+This last step is also needed when the library is copied to another computer.
+If this is not done, then "Apple could not verify “libifc_lite_ffi.dylib” is free of malware that may harm your Mac or compromise your privacy." message box
+is displayed and the NativeLibrary.TryLoad method in .Net fails.
 
 ## Native interop contract
 
