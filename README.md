@@ -102,6 +102,18 @@ This last step is also needed when the library is copied to another computer.
 If this is not done, then "Apple could not verify “libifc_lite_ffi.dylib” is free of malware that may harm your Mac or compromise your privacy." message box
 is displayed and the NativeLibrary.TryLoad method in .Net fails.
 
+### Build on Linux
+
+Install Rust and use the following command:
+```bash
+cargo +nightly build --profile server-release -p ifc-lite-ffi --target x86_64-unknown-linux-gnu
+```
+
+Output:
+```text
+target/x86_64-unknown-linux-gnu/server-release/libifc_lite_ffi.so
+```
+
 ## Native interop contract
 
 Match the Rust `#[repr(C)]` structures and C calling convention in your managed
