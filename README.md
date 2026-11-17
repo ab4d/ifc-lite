@@ -7,7 +7,7 @@ C-compatible streaming interface that .NET can call through P/Invoke or
 unmanaged function pointers.
 
 The native library can be used by the
-[Ab4d.SharpEngine.IfcLight NuGet package](https://www.nuget.org/packages/Ab4d.SharpEngine.IfcLight/)
+[Ab4d.SharpEngine.IfcLight NuGet package](https://www.nuget.org/packages/Ab4d.SharpEngine.IfcLite/)
 to import IFC geometry into AB4D SharpEngine.
 
 ## See the importer in action
