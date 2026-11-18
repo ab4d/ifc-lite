@@ -23,34 +23,33 @@ pub struct GeometryProcessor;
 /// the MeshBatchCallback invocation — copy the data before returning.
 ///
 /// All string pointers (`ifc_type_ptr`, `name_ptr`, `layer_ptr`,
-/// `properties_json_ptr`) point to null-terminated UTF-8 bytes and are
+/// `properties_json_ptr`, `material_name_ptr`) point to null-terminated UTF-8 bytes and are
 /// NEVER null — absent/empty fields use an empty C-string (`"\0"`).
 /// `properties_json_ptr` points to a JSON object string, e.g.
 /// `{"FireRating":"REI 90","IsExternal":"true"}\0`, or `{}\0` when
 /// the mesh has no properties.
+
 #[repr(C)]
 pub struct NativeMesh {
-    pub position_ptr: *const f32,
-    pub normal_ptr: *const f32,
-    pub index_ptr: *const u32,
-    /// Null-terminated UTF-8 IFC type name, e.g. `"IfcWall\0"`.
-    pub ifc_type_ptr: *const u8,
+    pub express_id: u32,
+    /// Source geometry item EXPRESS id, or 0 when absent.
+    pub geometry_item_id: u32,
     pub global_id_ptr: *const u8,
     /// Null-terminated UTF-8 element name, or `"\0"` when absent.
     pub name_ptr: *const u8,
+    /// Null-terminated UTF-8 IFC type name, e.g. `"IfcWall\0"`.
+    pub ifc_type_ptr: *const u8,
     /// Null-terminated UTF-8 presentation layer, or `"\0"` when absent.
     pub layer_ptr: *const u8,
+    /// Null-terminated UTF-8 material name, or `"\0"` when absent.
+    pub material_name_ptr: *const u8,
     /// Null-terminated UTF-8 JSON object of flat string properties,
     /// e.g. `{"IsExternal":"true"}\0`. Always `"{}\0"` when none.
     pub properties_json_ptr: *const u8,
-    pub express_id: u32,
-    pub vertex_count: u32,
-    pub index_count: u32,
     pub color_r: f32,
     pub color_g: f32,
     pub color_b: f32,
     pub color_a: f32,
-    pub _padding: u32,
     /// Per-mesh origin, copied from MeshData::origin without narrowing.
     pub origin_x: f64,
     pub origin_y: f64,
@@ -62,6 +61,11 @@ pub struct NativeMesh {
     pub local_bounds_max_x: f32,
     pub local_bounds_max_y: f32,
     pub local_bounds_max_z: f32,
+    pub vertex_count: u32,
+    pub index_count: u32,
+    pub position_ptr: *const f32,
+    pub normal_ptr: *const f32,
+    pub index_ptr: *const u32,
 }
 
 /// Tessellation quality levels, mirroring `ifc_lite_geometry::TessellationQuality`.
@@ -290,6 +294,7 @@ pub unsafe extern "C" fn geometry_processor_process_adaptive(
                     std::ffi::CString, // name
                     std::ffi::CString, // layer
                     std::ffi::CString, // properties_json
+                    std::ffi::CString, // material_name
                 )> = meshes
                     .iter()
                     .filter(|m| !m.positions.is_empty() && !m.indices.is_empty())
@@ -300,6 +305,7 @@ pub unsafe extern "C" fn geometry_processor_process_adaptive(
                             opt_to_cstr(m.name.as_deref()),
                             opt_to_cstr(m.presentation_layer.as_deref()),
                             properties_to_cstr(m.properties.as_ref()),
+                            opt_to_cstr(m.material_name.as_deref()),
                         )
                     })
                     .collect();
@@ -309,7 +315,7 @@ pub unsafe extern "C" fn geometry_processor_process_adaptive(
                     .filter(|m| !m.positions.is_empty() && !m.indices.is_empty())
                     .zip(cstrings.iter())
                     .map(
-                        |(m, (ifc_cs, global_id_cs, name_cs, layer_cs, props_cs))| NativeMesh {
+                        |(m, (ifc_cs, global_id_cs, name_cs, layer_cs, props_cs, material_cs))| NativeMesh {
                             position_ptr: m.positions.as_ptr(),
                             normal_ptr: m.normals.as_ptr(),
                             index_ptr: m.indices.as_ptr(),
@@ -325,7 +331,6 @@ pub unsafe extern "C" fn geometry_processor_process_adaptive(
                             color_g: m.color[1],
                             color_b: m.color[2],
                             color_a: m.color[3],
-                            _padding: 0,
                             origin_x: m.origin[0],
                             origin_y: m.origin[1],
                             origin_z: m.origin[2],
@@ -335,6 +340,8 @@ pub unsafe extern "C" fn geometry_processor_process_adaptive(
                             local_bounds_max_x: m.local_bounds.map_or(f32::NAN, |b| b[3]),
                             local_bounds_max_y: m.local_bounds.map_or(f32::NAN, |b| b[4]),
                             local_bounds_max_z: m.local_bounds.map_or(f32::NAN, |b| b[5]),
+                            material_name_ptr: material_cs.as_ptr() as *const u8,
+                            geometry_item_id: m.geometry_item_id.unwrap_or(0),
                         },
                     )
                     .collect();
